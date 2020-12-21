@@ -4,6 +4,7 @@ const { loginValidate, registerValidate } = require("../validation");
 const bcrypt = require("bcryptjs");
 const User = require("../model/User");
 const jwt = require("jsonwebtoken");
+const verify = require("./verifyToken");
 
 Router.post("/login", async (req, res) => {
   const validate = loginValidate.validate(req.body);
@@ -24,9 +25,8 @@ Router.post("/login", async (req, res) => {
     return res.status(401).send({ message: "Not authenticated" });
 
   const token = jwt.sign({ _id: user._id }, process.env.AUTH_TOKEN);
-  res.header("auth-token", token);
 
-  return res.send({ message: "Authenticated" });
+  return res.header("auth-token", token).send({ message: "Authenticated" });
 });
 Router.post("/register", async (req, res) => {
   const validate = registerValidate.validate(req.body);
@@ -51,5 +51,14 @@ Router.post("/register", async (req, res) => {
   newUser.save();
 
   return res.status(201).send({ message: "User created" });
+});
+Router.get("/info", verify, async (req, res) => {
+  // @ts-ignore
+  const { _id } = req;
+  const user = await User.findOne({ _id }).exec();
+
+  // @ts-ignore
+  const { email } = user;
+  res.send({ email });
 });
 module.exports = Router;
